@@ -1,0 +1,44 @@
+{
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "https://localhost:7006",
+      "sslPort": 7006
+    }
+  },
+  "profiles": {
+    "CDR.Register.Admin.API": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": "true",
+      "applicationUrl": "https://localhost:7006"
+    },
+    "CDR.Register.Admin.API.Development": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": "true",
+      "applicationUrl": "https://localhost:7006"
+    },
+    "CDR.Register.Admin.API.Container": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Container"
+      },
+      "dotnetRunMessages": "true",
+      "applicationUrl": "https://localhost:7006"
+    },
+    "CDR.Register.Admin.API.Release": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Release"
+      },
+      "dotnetRunMessages": "true",
+      "applicationUrl": "https://localhost:7006"
+    }
+  }
+}

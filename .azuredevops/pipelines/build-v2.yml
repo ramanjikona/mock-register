@@ -1,0 +1,214 @@
+# Build pipeline v2 (Containerised)
+
+trigger:
+  - develop
+  - main    
+  - releases/*
+  
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+
+# Build mock-register
+- task: Docker@2
+  displayName: Build mock-register image
+  inputs:
+    command: build 
+    Dockerfile: ./Source/Dockerfile
+    buildContext: ./Source
+    repository: mock-register
+    tags: latest
+
+# Build mock-register-unit-tests
+- task: Docker@2
+  displayName: Build mock-register-unit-tests image
+  inputs:
+    command: build 
+    Dockerfile: ./Source/Dockerfile.unit-tests
+    buildContext: ./Source
+    repository: mock-register-unit-tests
+    tags: latest
+
+# Build mock-register-integration-tests
+- task: Docker@2
+  displayName: Build mock-register-integration-tests image
+  inputs:
+    command: build 
+    Dockerfile: ./Source/Dockerfile.integration-tests
+    buildContext: ./Source
+    repository: mock-register-integration-tests
+    tags: latest
+
+# # Build mock-register-for-testing
+# - task: Docker@2
+#   displayName: Build mock-register-for-testing image
+#   inputs:
+#     command: build 
+#     Dockerfile: ./Source/Dockerfile.for-testing
+#     buildContext: ./Source
+#     repository: mock-register-for-testing
+#     tags: latest
+
+# List docker images
+- task: Docker@2
+  displayName: List Docker images
+  condition: always() 
+  inputs:
+    command: images
+
+# Run unit tests
+- task: DockerCompose@0
+  displayName: Unit Tests - Up
+  inputs:
+    action: Run a Docker Compose command
+    dockerComposeFile: Source/docker-compose.UnitTests.yml     
+    dockerComposeCommand: up --abort-on-container-exit --exit-code-from mock-register-unit-tests
+
+# Remove unit tests
+- task: DockerCompose@0
+  displayName: Unit Tests - Down
+  condition: always()
+  inputs:
+    action: Run a Docker Compose command
+    dockerComposeFile: Source/docker-compose.UnitTests.yml     
+    dockerComposeCommand: down
+
+# Run integration tests
+- task: DockerCompose@0
+  displayName: Integration Tests - Up
+  inputs:
+    action: Run a Docker Compose command
+    dockerComposeFile: Source/docker-compose.IntegrationTests.yml     
+    dockerComposeCommand: up --abort-on-container-exit --exit-code-from mock-register-integration-tests
+
+# Remove integration tests
+- task: DockerCompose@0
+  displayName: Integration Tests - Down
+  condition: always()
+  inputs:
+    action: Run a Docker Compose command
+    dockerComposeFile: Source/docker-compose.IntegrationTests.yml     
+    dockerComposeCommand: down
+
+# Save docker image to TAR so it can be published
+- task: Docker@2
+  displayName: Save MockRegister image to TAR
+  inputs:
+    repository: mock-register
+    command: save
+    arguments: --output $(build.artifactstagingdirectory)/mock-register.image.tar mock-register
+    addPipelineData: false
+
+# Publish docker image
+- task: PublishPipelineArtifact@1
+  displayName: Publish container images  
+  # condition: always()
+  inputs:
+    path: $(build.artifactstagingdirectory)
+    artifact: Container Images
+
+# FIXME - MJS - See dockercompose, volume no longer mapped as 1001:121 (vsts:docker) in build pipeline and causes issue with chown in dockerfile (appuser:appgroup), ie stops register from starting because of different user
+# # Publish mock-register logs
+# - publish: Source/_temp/mock-register/tmp
+#   displayName: Publish MockRegister logs
+#   condition: always()
+#   artifact: Mock-Register - Logs
+
+# Publish mock-register unit tests results
+- publish: Source/_temp/mock-register-unit-tests/testresults
+  displayName: Publish unit tests
+  condition: always()
+  artifact: Mock-Register - Unit tests
+
+# Login to ACR
+- task: Docker@2
+  displayName: Login to ACR
+  condition: always()
+  inputs:
+    command: login
+    containerRegistry: <<yourContainerRegistryName>>
+
+# Run trx formatter to output .MD and .CSV
+- script: |
+    docker run \
+      -v=$(Build.SourcesDirectory)/Source/_temp/mock-register-integration-tests/testresults/results.trx:/app/results.trx:ro \
+      -v=$(Build.SourcesDirectory)/Source/_temp/mock-register-integration-tests/testresults/formatted/:/app/out/:rw \
+      <<yourContainerRegistryName>>.azurecr.io/trx-formatter -i results.trx -t "MR" --outputprefix "MR" -o out/
+  displayName: 'Run trx-formatter'  
+  condition: always()   
+
+# Publish mock-register integration tests results
+- publish: Source/_temp/mock-register-integration-tests/testresults
+  displayName: Publish MockRegister Integration tests
+  condition: always()
+  artifact: Mock-Register - Integration tests 
+
+- task: UseDotNet@2
+  displayName: 'Use .NET 6 sdk'
+  condition: always()
+  inputs:
+    packageType: sdk
+    version: '6.0.x'
+    performMultiLevelLookup: true
+
+- task: CmdLine@2
+  displayName: 'Install dotnet-ef'
+  condition: always()
+  inputs:
+    script: 'dotnet tool install --global dotnet-ef'
+    
+- task: CmdLine@2
+  displayName: 'Check dotnet-ef version'
+  condition: always()
+  inputs:
+    script: 'dotnet-ef'
+
+- script: |
+    cd Source/CDR.Register.Repository 
+    dotnet ef migrations bundle --context RegisterDatabaseContext --verbose --self-contained
+    ls
+  displayName: 'Run EF Migrations bundle'
+  condition: always()
+
+- publish: Source/CDR.Register.Repository/efbundle
+  displayName: Publish EF Migration bundle
+  condition: always()
+  artifact: Database Migration Scripts
+  
+- task: PublishTestResults@2
+  displayName: 'Surface Integration Test TRX results to devops'
+  condition: succeededOrFailed()
+  inputs:
+    testResultsFormat: 'VSTest' # Options: JUnit, NUnit, VSTest, xUnit, cTest
+    testResultsFiles: '**/results.trx' 
+
+- task: Docker@2
+  displayName: 'Re-Tag Mock Register container image with :branch-name'
+  inputs:
+    containerRegistry: <<yourContainerRegistryName>>
+    repository: 'mock-register'
+    command: tag
+    # arguments: 'mock-register-for-testing <<yourContainerRegistryName>>.azurecr.io/mock-register:$(Build.SourceBranchName)'
+    arguments: 'mock-register <<yourContainerRegistryName>>.azurecr.io/mock-register:$(Build.SourceBranchName)'
+
+- task: Docker@2
+  displayName: 'Re-Tag Register API image with :latest (for develop branch only)'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+  inputs:
+    containerRegistry: <<yourContainerRegistryName>>
+    repository: 'mock-register'
+    command: tag
+    # arguments: 'mock-register-for-testing <<yourContainerRegistryName>>.azurecr.io/mock-register:latest'
+    arguments: 'mock-register <<yourContainerRegistryName>>.azurecr.io/mock-register:latest'
+
+- task: CmdLine@2
+  displayName: 'Push Register container image with :branch-name tag to ACR'
+  inputs:
+    script: 'docker push <<yourContainerRegistryName>>.azurecr.io/mock-register:$(Build.SourceBranchName)' 
+
+- task: CmdLine@2
+  displayName: 'Push Register container image with :latest tag to ACR (develop branch only)'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+  inputs:
+    script: 'docker push <<yourContainerRegistryName>>.azurecr.io/mock-register:latest' 
