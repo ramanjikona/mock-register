@@ -2,18 +2,20 @@ version: '3.8'
 
 services:
   mock-register:
-    container_name: mock-register
-    image: consumerdataright/mock-register
+    container_name: cuscal-mock-register
+    image: rkona/cuscal-mock-register
     ports: 
       - "7000:7000"
       - "7001:7001"
-      - "7006:7006"
-    extra_hosts:
-      - "mock-data-holder:host-gateway"
-      - "mock-data-holder-energy:host-gateway"
-      - "mock-data-recipient:host-gateway"      
+      - "7006:7006"    
     environment:
       - ASPNETCORE_ENVIRONMENT=Release
+      - IssuerUri=https://accc.dev.cuscal.com.au:7000/idp
+      - JwksUri=https://accc.dev.cuscal.com.au:7000/idp/.well-known/openid-configuration/jwks
+      - TokenUri=https://acccpost.dev.cuscal.com.au:7001/idp/connect/token
+      - IdentityServerTokenUri=https://acccpost.dev.cuscal.com.au:7001/idp/connect/token
+      - IdentityServerUrl=https://accc.dev.cuscal.com.au:7000/idp
+      - IdentityServerIssuer=https://accc.dev.cuscal.com.au:7000/idp      
     healthcheck:
       test: wget --no-check-certificate --no-verbose --spider https://localhost:7006/health || exit 1
       timeout: 5s
@@ -22,82 +24,13 @@ services:
     depends_on:
       mssql:
         condition: service_healthy
-
-  mock-data-holder:
-    container_name: mock-data-holder
-    image: consumerdataright/mock-data-holder
-    ports: 
-      - "8000:8000"
-      - "8001:8001"
-      - "8002:8002"
-      - "8005:8005"
-      - "3000:3000"
-    extra_hosts:
-      - "mock-data-recipient:host-gateway"
-      - "mock-register:host-gateway"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Release
-    healthcheck:
-      test: wget --no-check-certificate --no-verbose --spider https://localhost:8001/health || exit 1      
-      timeout: 5s
-      interval: 5s
-      retries: 50      
-    depends_on:
-      mssql:
-        condition: service_healthy
-
-  mock-data-holder-energy:
-    container_name: mock-data-holder-energy
-    image: consumerdataright/mock-data-holder-energy
-    ports: 
-      - "8100:8100"
-      - "8101:8101"
-      - "8102:8102"
-      - "8105:8105"
-      - "3100:3100"
-    extra_hosts:
-      - "mock-data-recipient:host-gateway"
-      - "mock-register:host-gateway"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Release
-    healthcheck:
-      test: wget --no-check-certificate --no-verbose --spider https://localhost:8101/health || exit 1      
-      timeout: 5s
-      interval: 5s
-      retries: 50      
-    depends_on:
-      mssql:
-        condition: service_healthy
-
-  mock-data-recipient:
-    container_name: mock-data-recipient
-    image: consumerdataright/mock-data-recipient
-    ports: 
-      - "9001:9001"
-    extra_hosts:
-      - "mock-data-holder:host-gateway"
-      - "mock-data-holder-energy:host-gateway"
-      - "mock-register:host-gateway"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Release
-    healthcheck:
-      test: wget --no-check-certificate --no-verbose --spider https://localhost:9001/health || exit 1            
-      timeout: 5s
-      interval: 5s
-      retries: 50      
-    depends_on:
-      mssql:
-        condition: service_healthy
-
   mssql:
     container_name: sql1
     image: 'mcr.microsoft.com/mssql/server:2019-latest'
     ports:
       - '1433:1433'
     environment:
-      - ACCEPT_EULA=${ACCEPT_MSSQL_EULA:?This docker compose file utilises the Microsoft SQL Server Image from Docker Hub. 
-            The Microsoft EULA for the Microsoft SQL Server Image must be accepted to continue. Replace this unset ACCEPT_MSSQL_EULA variable with a Y if you accept the EULA. eg ACCEPT_EULA=Y. 
-            See the Microsoft SQL Server Image on Docker Hub for more information.}
+      - ACCEPT_EULA=Y
       - SA_PASSWORD=Pa{}w0rd2019
     healthcheck:
       test: /opt/mssql-tools/bin/sqlcmd -S . -U sa -P "Pa{}w0rd2019" -Q "SELECT 1" || exit 1 

@@ -32,6 +32,7 @@ namespace CDR.Register.Infosec.Services
             var tokenValidationParameters = new TokenValidationParameters
             {
                 IssuerSigningKeys = (await GetClientKeys(client)),
+                
                 ValidateIssuerSigningKey = true,
 
                 ValidateIssuer = false,
@@ -46,8 +47,14 @@ namespace CDR.Register.Infosec.Services
 
             try
             {
+                
+                _logger.LogError(clientAssertion,"Printing client_assertion");
+                _logger.LogError(Constants.ConfigurationKeys.TokenEndpoint, "Constants.ConfigurationKeys.TokenEndpoint");
+
                 var handler = new JwtSecurityTokenHandler();
                 handler.ValidateToken(clientAssertion, tokenValidationParameters, out var token);
+
+                _logger.LogError("Token validation failed");
 
                 validatedSecurityToken = (JwtSecurityToken)token;
                 if (string.IsNullOrEmpty(validatedSecurityToken.Id))
