@@ -7,7 +7,9 @@ services:
     ports: 
       - "7000:7000"
       - "7001:7001"
-      - "7006:7006"    
+      - "7006:7006"
+    extra_hosts:
+    - "mock-data-holder:host-gateway"
     environment:
       - ASPNETCORE_ENVIRONMENT=Release
       - IssuerUri=https://accc.dev.cuscal.com.au:7000/idp

@@ -37,19 +37,45 @@ namespace CDR.Register.Admin.API.Controllers
             var key = cert.GetRSAPublicKey();
             var rsaParams = key.ExportParameters(false);
             var kid = GenerateKid(rsaParams, out var e, out var n);
-            var jwk = new CDR.Register.API.Infrastructure.Models.JsonWebKey()
+            var jwk1 = new CDR.Register.API.Infrastructure.Models.JsonWebKey()
             {
                 alg = "PS256",
                 kid = kid,
                 kty = "RSA",
                 n = n,
                 e = e,
-                key_ops = new string[] { "sign", "verify" }
+                key_ops = new string[] { "sign", "verify" },
+                use = "sig",
+                x5c = new string[] { key.ToString() },
+                x5t = "UYsSYQtcB7cLVTSjtn0kIBxlthY"
             };
-
+            var jwk2 = new CDR.Register.API.Infrastructure.Models.JsonWebKey()
+            {
+                alg = "RSA-OAEP",
+                kid = kid,
+                kty = "RSA",
+                n = n,
+                e = e,
+                key_ops = new string[] { "sign", "verify" },
+                use = "enc",
+                x5c = new string[] { key.ToString() },
+                x5t = "UYsSYQtcB7cLVTSjtn0kIBxlthY"
+            };
+            var jwk3 = new CDR.Register.API.Infrastructure.Models.JsonWebKey()
+            {
+                alg = "A256GCM",
+                kid = kid,
+                kty = "RSA",
+                n = n,
+                e = e,
+                key_ops = new string[] { "sign", "verify" },
+                use = "enc",
+                x5c = new string[] { key.ToString() },
+                x5t = "UYsSYQtcB7cLVTSjtn0kIBxlthY"
+            };
             return Ok(new CDR.Register.API.Infrastructure.Models.JsonWebKeySet()
             {
-                keys = new CDR.Register.API.Infrastructure.Models.JsonWebKey[] { jwk }
+                keys = new CDR.Register.API.Infrastructure.Models.JsonWebKey[] { jwk1,jwk2,jwk3 }
             });
         }
 
