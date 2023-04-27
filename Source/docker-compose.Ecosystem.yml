@@ -10,9 +10,6 @@ services:
       - "7006:7006"
     extra_hosts:
     - "mock-data-holder:host-gateway"
-    - "127.0.0.1:mock-register"
-    - "127.0.0.1:mock-data-holder"
-    - "127.0.0.1:mssql"
     environment:
       - ASPNETCORE_ENVIRONMENT=Release
       - IssuerUri=https://accc.dev.cuscal.com.au:7000/idp

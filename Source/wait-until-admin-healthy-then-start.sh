@@ -20,4 +20,7 @@ done
 echo "wait-until-admin-healthy-then-start.sh -" $1 "- starting"
 /usr/bin/dotnet $1 
 
+echo "127.0.0.1 mock-register" >> /etc/hosts
+echo "127.0.0.1 mssql" >> /etc/hosts
+
 exit
