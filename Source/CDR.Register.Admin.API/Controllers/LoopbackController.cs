@@ -34,6 +34,31 @@ namespace CDR.Register.Admin.API.Controllers
         public IActionResult MockDataRecipientJwks()
         {
             var cert = new X509Certificate2("Certificates/client.pem");
+            var x5cStr = "MIIEoTCCAomgAwIBAgIJAOq6p0K1g1nHMA0GCSqGSIb3DQEBCwUAMGExCzAJBgNV" +
+                "BAYTAkFVMQwwCgYDVQQIDANBQ1QxETAPBgNVBAcMCENhbmJlcnJhMQ0wCwYDVQQK" +
+                "DARBQ0NDMQwwCgYDVQQLDANDRFIxFDASBgNVBAMMC01vY2sgQ0RSIENBMB4XDTIy" +
+                "MDUyMzA0Mjc0MFoXDTIzMDYyNzA0Mjc0MFowZzEaMBgGA1UEAwwRTW9ja0RhdGFS" +
+                "ZWNpcGllbnQxCzAJBgNVBAYTAkFVMQwwCgYDVQQIDANBQ1QxETAPBgNVBAcMCENh" +
+                "bmJlcnJhMQ0wCwYDVQQKDARBQ0NDMQwwCgYDVQQLDANDRFIwggEiMA0GCSqGSIb3" +
+                "DQEBAQUAA4IBDwAwggEKAoIBAQCzoH/1TK63z+axsPAbE1LUzBJAK3RZlY91t7Cr" +
+                "EmjkUU+U9ivJStZIkLaJIOlj4IDb5rFtkiGeO6PGtIm1tGLNdG8ZvqIHKdc20y/n" +
+                "0kCzMQKYe6OUhg3xrmkt4b8V/lidnV3l/tc0a4OPAoPhu1/etBN/3juowfV0VoY0" +
+                "DXmkUzAxICsqxNR18bRT+zI0EuNQBDhJkPYk6mvHt0UY5U9aD5rrjiei1kJLrQ3a" +
+                "p0IrWbe1HKQ4q5TjXWsxg8nywUZqeR3Rs0SAAz3WOpEEdFjAGLSYmltMHKPXE6oJ" +
+                "jmfWqsVAOao7BeAdCBdyCk0oupXo0XKMY4s1mI6616Rq7EzbAgMBAAGjVjBUMB8G" +
+                "A1UdIwQYMBaAFIMGntq6COYrCVIIYmzeFKQXdnVRMAkGA1UdEwQCMAAwDgYDVR0P" +
+                "AQH/BAQDAgXgMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMCMA0GCSqGSIb3DQEBCwUA" +
+                "A4ICAQBBXWAvnMkDk+kzS8NLVEgwhGhwvDSrqKuDML14cAYWGPuMuVZ+HvuVX0qO" +
+                "mCXqyk7qhClofmUDxgrJ041I/0iox8oDqKM2kxlLpwktDYFqnS23XOiVNL3YNdxU" +
+                "fyJWLMZCrb+cjidEGaPku4HPH4/H0o7sRji966zOw48tArtN/VBFJz0g7O6cT2yM" +
+                "HFxbkTLvL/+ZO1FxS7YvjEhxPjsyt+M4eXrj2HCAsCQTVWXJwjtizxhrBRfElaR2" +
+                "Og6vQhIxgC+PUrkbWLPegFQAC5XhZ3Y5kJVmZUXEqDD4vi/VuGSyjBd2+c2IcK71" +
+                "JFOgO6pqiIGAt9Inx1EgTENG8IzannjXaoXGkj9x3ugE5H54a8B4ZuDoODsKSrJ/" +
+                "RmmWRZqKeLTVIIdMt6Tyjk4w7tQ5Qv+3xmh37qrRmhdT3grmuPVQtl7+Blwcg4Zz" +
+                "oJVUxrId/UPg74cfdIF7lhKVfrT0UUaitwBvXHaE33hzyHbvlmQnIT94nhVZg317" +
+                "A7X3vsK90v7xjQq7mLWw9E83TDlXf/08qJXPwUe2BoLvVcVd5ouUapoXw+6zv8me" +
+                "dl5IrE54qD62RUbP61f/dlROcS0i7nVEfjbwHFh16C9uOgnHt8mqq0dWFQvmlqlf" +
+                "oE/EgVB5O6TfoVNiQbXA7E6Pc0WC/WUFvyzJ0HYHiDOZc16P9Q==";
             var key = cert.GetRSAPublicKey();
             var rsaParams = key.ExportParameters(false);
             var kid = GenerateKid(rsaParams, out var e, out var n);
@@ -46,7 +71,7 @@ namespace CDR.Register.Admin.API.Controllers
                 e = e,
                 key_ops = new string[] { "sign", "verify" },
                 use = "sig",
-                x5c = new string[] { key.ToString() },
+                x5c = new string[] { x5cStr },
                 x5t = "UYsSYQtcB7cLVTSjtn0kIBxlthY"
             };
             var jwk2 = new CDR.Register.API.Infrastructure.Models.JsonWebKey()
@@ -58,7 +83,7 @@ namespace CDR.Register.Admin.API.Controllers
                 e = e,
                 key_ops = new string[] { "sign", "verify" },
                 use = "enc",
-                x5c = new string[] { key.ToString() },
+                x5c = new string[] { x5cStr },
                 x5t = "UYsSYQtcB7cLVTSjtn0kIBxlthY"
             };
             var jwk3 = new CDR.Register.API.Infrastructure.Models.JsonWebKey()
@@ -70,7 +95,7 @@ namespace CDR.Register.Admin.API.Controllers
                 e = e,
                 key_ops = new string[] { "sign", "verify" },
                 use = "enc",
-                x5c = new string[] { key.ToString() },
+                x5c = new string[] { x5cStr },
                 x5t = "UYsSYQtcB7cLVTSjtn0kIBxlthY"
             };
             return Ok(new CDR.Register.API.Infrastructure.Models.JsonWebKeySet()

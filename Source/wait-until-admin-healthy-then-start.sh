@@ -19,5 +19,4 @@ done
 # Start
 echo "wait-until-admin-healthy-then-start.sh -" $1 "- starting"
 /usr/bin/dotnet $1 
-
 exit
