@@ -65,6 +65,14 @@ RUN apt-get update && apt-get install -y sudo
 # Install wget for use in health checks
 RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
+# Creating Infosec ID server folder and copying mtls certs
+RUN sudo mkdir -p /app/idsvr/Certificates/
+RUN sudo cp ./gateway-mtls/Certificates/ca.pem /app/idsvr/Certificates/ca.pem
+RUN sudo cp ./gateway-mtls/Certificates/register.pfx /app/idsvr/Certificates/register.pfx
+
+RUN sudo echo "127.0.0.1 mock-register" >> /etc/hosts
+RUN sudo echo "127.0.0.1 mssql" >> /etc/hosts
+
 RUN sudo cp ./gateway-mtls/Certificates/ca.crt /usr/local/share/ca-certificates/ca.crt
 
 RUN sudo update-ca-certificates
