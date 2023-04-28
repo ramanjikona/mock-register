@@ -1,8 +1,8 @@
-version: '2.0'
+version: '3.8'
 
 services:
   mock-register:
-    container_name: cuscal-mock-register
+    container_name: mock-register
     image: rkona/cuscal-mock-register
     ports: 
       - "7000:7000"
